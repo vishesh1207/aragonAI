@@ -116,3 +116,6 @@ See `backend/.env.example`. All optional for local dev — defaults cover the ze
 - **AWS Rekognition** — better face detection accuracy, horizontal scale
 - **Vector index** — replace O(n) pHash scan with MongoDB Atlas Vector Search
 - **User sessions** — uploads currently share a global pool
+
+Sample Preview:
+<img width="1791" height="1043" alt="image" src="https://github.com/user-attachments/assets/79158591-2c26-4cb9-a9c5-97cab6811ea0" />
