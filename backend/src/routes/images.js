@@ -17,18 +17,27 @@ router.post('/upload', upload.array('images', 10), async (req, res) => {
     return res.status(400).json({ error: 'No files provided.' });
   }
 
-  const results = await Promise.all(
+  // Phase 1: create all PENDING records and pre-save pHashes so that
+  // batch siblings can find each other during the similarity check
+  const prepared = await Promise.all(
     req.files.map(async (file) => {
-      // 1. Persist record immediately so similarity checks work across concurrent uploads
       const record = await Image.create({
         originalName: file.originalname,
         mimeType:     file.mimetype,
         sizeBytes:    file.size,
         status:       'PENDING',
       });
+      const pHash = await computePerceptualHash(file.buffer).catch(() => null);
+      if (pHash) await Image.findByIdAndUpdate(record._id, { pHash });
+      return { file, record };
+    })
+  );
 
+  // Phase 2: full validation — findSimilarImage now sees all PENDING siblings
+  const results = await Promise.all(
+    prepared.map(async ({ file, record }) => {
       // 2. Run full validation pipeline
-      const validation = await validateImage(file.buffer, file.mimetype, file.size);
+      const validation = await validateImage(file.buffer, file.mimetype, file.size, record._id);
 
       if (!validation.valid) {
         await Image.findByIdAndUpdate(record._id, {
