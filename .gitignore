@@ -1,5 +1,12 @@
 node_modules/
 .env
 dist/
-build/node_modules/
-.env
+build/
+
+# Uploaded user files (local disk mode)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Auto-downloaded face detection model weights
+backend/models/*.bin
+backend/models/*.json
