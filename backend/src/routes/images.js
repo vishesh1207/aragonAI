@@ -1,7 +1,7 @@
 const express = require('express');
 const Image = require('../models/Image');
 const { upload } = require('../middleware/upload');
-const { validateImage } = require('../services/imageValidator');
+const { validateImage, computePerceptualHash } = require('../services/imageValidator');
 const { normalizeImage } = require('../services/imageProcessor');
 const { uploadToS3, deleteFromS3 } = require('../lib/s3');
 

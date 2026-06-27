@@ -4,7 +4,7 @@ const Image = require('../models/Image');
 const MIN_WIDTH  = parseInt(process.env.MIN_IMAGE_WIDTH)   || 200;
 const MIN_HEIGHT = parseInt(process.env.MIN_IMAGE_HEIGHT)  || 200;
 const MIN_BYTES  = parseInt(process.env.MIN_FILE_BYTES)    || 10_000;
-const BLUR_THRESHOLD       = parseFloat(process.env.BLUR_THRESHOLD)        || 100;
+const BLUR_THRESHOLD       = parseFloat(process.env.BLUR_THRESHOLD)        || 500;
 const SIMILARITY_THRESHOLD = parseInt(process.env.SIMILARITY_THRESHOLD)    || 10;
 const MIN_FACE_RATIO       = parseFloat(process.env.MIN_FACE_SIZE_RATIO)   || 0.05;
 
@@ -56,7 +56,7 @@ function hammingDistance(a, b) {
 
 async function findSimilarImage(pHash, excludeId) {
   const images = await Image.find(
-    { pHash: { $ne: null }, status: { $in: ['ACCEPTED', 'PROCESSING'] },
+    { pHash: { $ne: null }, status: { $in: ['PENDING', 'ACCEPTED', 'PROCESSING'] },
       ...(excludeId && { _id: { $ne: excludeId } }) },
     { _id: 1, pHash: 1 }
   ).lean();
@@ -74,7 +74,7 @@ const { detectFaces } = require('./faceDetector');
 /**
  * Full validation pipeline. Returns { valid, reason?, meta }.
  */
-async function validateImage(buffer, mimetype, fileSize) {
+async function validateImage(buffer, mimetype, fileSize, excludeId = null) {
   if (!ALLOWED_MIMES.includes(mimetype)) {
     return { valid: false, reason: 'Unsupported format. Only JPEG, PNG, and HEIC are allowed.' };
   }
@@ -103,7 +103,7 @@ async function validateImage(buffer, mimetype, fileSize) {
   }
 
   const pHash = await computePerceptualHash(buffer);
-  const similarId = await findSimilarImage(pHash);
+  const similarId = await findSimilarImage(pHash, excludeId);
   if (similarId) {
     return {
       valid: false,
